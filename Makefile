@@ -14,7 +14,7 @@ LIBS = -lpthread
 CFLAGS = -O3
 
 DEPS = *.cpp *.h
-OBJS=argtable3.o options.o
+OBJS=argtable3.o 
 .PHONY:	all clean
 
 PROGS= gclu gclu_ig
