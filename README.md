@@ -12,8 +12,10 @@ One line for each item in dataset. Line format:
 Lines end with '\n' (including last line). Input file must not have \r or \t characters.
 
 Example row: 
+```
 0 5 24 99 483 11 444 1414008.500000 1238420.750000 0.000000 0.000000 0.000000  
 ...  
+```
 First node id = 0, K = 5, neighbors = [24 99 483 11 444], weights = [1414008.500000 1238420.750000 .... ]  
 
 So, input is actually a directed graph, but gets converted to undirected. 
@@ -26,7 +28,8 @@ See unb3_knn10.txt as example input file. unb3_knn10.txt is a kNN graph of origi
 If needed to run other algorithms than k-algo, (e.g. walktrap, louvain, fastg), need  to set location of iGraph in Makefile: OIGRAPH var. Then compile:
 ```make gclu_ig```
 # Running the program
-```gclus [--help] [-o <file>] <file> [--seed=<n>] [-R <n>] [-K <n>] [-g <num>] [-V <num>] [-H <num>] [--density=<n>] [-I <num>] [--costf=<num>] [--format=<ascii|binary>] [-A <algorithm>] [--type=<similarity|distance>] [--scale=<no|yes>] [--evalpart=<file>] [--savparts=<num>] [--gstart=<num>] [--gend=<num>]
+```
+gclus [--help] [-o <file>] <file> [--seed=<n>] [-R <n>] [-K <n>] [-g <num>] [-V <num>] [-H <num>] [--density=<n>] [-I <num>] [--costf=<num>] [--format=<ascii|binary>] [-A <algorithm>] [--type=<similarity|distance>] [--scale=<no|yes>] [--evalpart=<file>] [--savparts=<num>] [--gstart=<num>] [--gend=<num>]
   --help                    display this help and exit
   -o, --out=<file>          output file
   <file>                    input graph file
@@ -50,10 +53,14 @@ If needed to run other algorithms than k-algo, (e.g. walktrap, louvain, fastg), 
 ```
 
 K-algo run example:
-```./gclu data/s4_knng_k30.txt -o tmp/s4.part -K 15 --algo k --costf 1 --type distance```
+```
+./gclu data/s4_knng_k30.txt -o tmp/s4.part -K 15 --algo k --costf 1 --type distance
+```
 
 M-algo run example (better quality):
-```./gclu data/s4_knng_k30.txt -o tmp/s4.part -R 100 -K 15 --algo m --costf 1 --type distance```
+```
+./gclu data/s4_knng_k30.txt -o tmp/s4.part -R 100 -K 15 --algo m --costf 1 --type distance
+```
 
 Abot parameters:
  - "-K 3": Cluster data to 3 clusters
@@ -65,6 +72,8 @@ Abot parameters:
 Output file contains number of nodes and number of clusters as header info and then the cluster label as integer for all nodes.
 
 Save intermediate partitions:
-```./gclu data/s4_knng_k30.txt -o tmp/s4.part -R 100 -K 15 --algo k --costf 1 --type distance --seed 1632488925 -g 0.8 --savparts=1```
+```
+./gclu data/s4_knng_k30.txt -o tmp/s4.part -R 100 -K 15 --algo k --costf 1 --type distance --seed 1632488925 -g 0.8 --savparts=1
+```
 Will create a directory 'part' where the intermediate partitions will be stored in. With savparts=1 will store only results for successful merge&split operations.
 
