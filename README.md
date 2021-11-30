@@ -1,6 +1,11 @@
 
 # GCLU
-The GCLU software implements the K-algorithm and M-algorithm for graph clustering.
+The GCLU software implements the K-algorithm and M-algorithm for graph clustering, published (accepted for publication) in the following article:
+
+ S. Sieranoja and P. Fränti, "Adapting k-means for graph clustering", Knowledge and Information Systems 2021. DOI: 10.1007/s10115-021-01623-y 
+ 
+Datasets can be downloaded from:
+http://cs.uef.fi/ml/article/graphclu/
 
 # Input data format.
 One line for each item in dataset. Line format:  
