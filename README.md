@@ -7,6 +7,8 @@ The GCLU software implements the K-algorithm and M-algorithm for graph clusterin
 Datasets can be downloaded from:
 http://cs.uef.fi/ml/article/graphclu/
 
+Contact: samisi@cs.uef.fi
+
 # Input data format.
 One line for each item in dataset. Line format:  
  - First number: id of node (in range 0..(N-1))
