@@ -36,7 +36,7 @@ If needed to run other algorithms than k-algo, (e.g. walktrap, louvain, fastg), 
 ```make gclu_ig```
 # Running the program
 ```
-gclus [--help] [-o <file>] <file> [--seed=<n>] [-R <n>] [-K <n>] [-g <num>] [-V <num>] [-H <num>] [--density=<n>] [-I <num>] [--costf=<num>] [--format=<ascii|binary>] [-A <algorithm>] [--type=<similarity|distance>] [--scale=<no|yes>] [--evalpart=<file>] [--savparts=<num>] [--gstart=<num>] [--gend=<num>]
+./gclu [--help] [-o <file>] <file> [--seed=<n>] [-R <n>] [-K <n>] [-g <num>] [-V <num>] [-H <num>] [--density=<n>] [-I <num>] [--costf=<num>] [--format=<ascii|binary>] [-A <algorithm>] [--type=<similarity|distance>] [--scale=<no|yes>] [--evalpart=<file>] [--savparts=<num>] [--gstart=<num>] [--gend=<num>]
   --help                    display this help and exit
   -o, --out=<file>          output file
   <file>                    input graph file
@@ -49,7 +49,6 @@ gclus [--help] [-o <file>] <file> [--seed=<n>] [-R <n>] [-K <n>] [-g <num>] [-V 
   --density=<n>             Density method, one of {0,1,2}
   -I, --maxiter=<num>       Maximum number of iterations for the k-algo
   --costf=<num>             cost function {1=cond,2=inv(default),meanw}
-  --format=<ascii|binary>   Input format: ascii or binary
   -A, --algo=<algorithm>    One of {k,m}. (default = m)
   --type=<similarity|distance> Are weights distances or similarities
   --scale=<no|yes>          Scale weights automatically (default:yes)

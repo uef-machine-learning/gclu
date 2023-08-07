@@ -1110,7 +1110,7 @@ int main(int argc, char *argv[]) {
   // printf("INFN:=%s\n", infn->filename[0]);
 
   if (help->count > 0 || ok == 0) {
-    printf("\ngclus");
+    printf("\ngclu");
     arg_print_syntax(stdout, argtable, "\n");
     arg_print_glossary(stdout, argtable, "  %-25s %s\n");
     // printf("ok=%d\n", ok);
