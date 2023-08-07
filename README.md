@@ -36,7 +36,7 @@ If needed to run other algorithms than k-algo, (e.g. walktrap, louvain, fastg), 
 ```make gclu_ig```
 # Running the program
 ```
-gclus [--help] [-o <file>] <file> [--seed=<n>] [-R <n>] [-K <n>] [-g <num>] [-V <num>] [-H <num>] [--density=<n>] [-I <num>] [--costf=<num>] [--format=<ascii|binary>] [-A <algorithm>] [--type=<similarity|distance>] [--scale=<no|yes>] [--evalpart=<file>] [--savparts=<num>] [--gstart=<num>] [--gend=<num>]
+./gclu [--help] [-o <file>] <file> [--seed=<n>] [-R <n>] [-K <n>] [-g <num>] [-V <num>] [-H <num>] [--density=<n>] [-I <num>] [--costf=<num>] [--format=<ascii|binary>] [-A <algorithm>] [--type=<similarity|distance>] [--scale=<no|yes>] [--evalpart=<file>] [--savparts=<num>] [--gstart=<num>] [--gend=<num>]
   --help                    display this help and exit
   -o, --out=<file>          output file
   <file>                    input graph file
@@ -49,7 +49,6 @@ gclus [--help] [-o <file>] <file> [--seed=<n>] [-R <n>] [-K <n>] [-g <num>] [-V 
   --density=<n>             Density method, one of {0,1,2}
   -I, --maxiter=<num>       Maximum number of iterations for the k-algo
   --costf=<num>             cost function {1=cond,2=inv(default),meanw}
-  --format=<ascii|binary>   Input format: ascii or binary
   -A, --algo=<algorithm>    One of {k,m}. (default = m)
   --type=<similarity|distance> Are weights distances or similarities
   --scale=<no|yes>          Scale weights automatically (default:yes)
@@ -69,7 +68,7 @@ M-algo run example (better quality):
 ./gclu data/s4_knng_k30.txt -o tmp/s4.part -R 100 -K 15 --algo m --costf 1 --type distance
 ```
 
-Abot parameters:
+About parameters:
  - "-K 3": Cluster data to 3 clusters
  - For better results, increase -R parameter to e.g. 1000
  - For costf, can try other values. "--costf 2" gives more balanced cluster sizes.
@@ -80,7 +79,7 @@ Output file contains number of nodes and number of clusters as header info and t
 
 Save intermediate partitions:
 ```
-./gclu data/s4_knng_k30.txt -o tmp/s4.part -R 100 -K 15 --algo k --costf 1 --type distance --seed 1632488925 -g 0.8 --savparts=1
+./gclu data/s4_knng_k30.txt -o tmp/s4.part -R 10 -K 15 --algo m --costf 1 --type distance --seed 1632488925 -g 0.8 --savparts=1
 ```
 Will create a directory 'part' where the intermediate partitions will be stored in. With savparts=1 will store only results for successful merge&split operations.
 
