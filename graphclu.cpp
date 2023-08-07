@@ -46,13 +46,21 @@ extern "C" {
 }
 #endif
 
+#include "heap.cpp"
+#include "linked_list.hpp"
+#include "nngraph.hpp"
+
 #include "gclu_options.h"
 
 #include "timer.h"
 #include "util.h"
 
-#include "linked_list.h"
-#include "nngraph.h"
+// #include "linked_list.h"
+// #include "nngraph.h"
+
+
+#include "linked_list.cpp"
+#include "nngraph.cpp"
 
 #include "graphclu.h"
 

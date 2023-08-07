@@ -1,7 +1,7 @@
 CC=g++
 GPP=g++
 
-#DISABLEWARN = -Wno-unused-but-set-variable -Wno-unused-result
+DISABLEWARN = -Wno-unused-but-set-variable -Wno-unused-result -Wno-unused-variable
 #ARCHFLAGS =  -march=x86-64  -mno-avx
 #CXXFLAGS +=  -O3 $(ARCHFLAGS)  -Wall -static -I.  -std=c++11
 
