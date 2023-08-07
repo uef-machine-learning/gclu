@@ -49,11 +49,12 @@ extern "C" {
 #include "heap.cpp"
 #include "linked_list.hpp"
 #include "nngraph.hpp"
+#include "util.hpp"
 
 #include "gclu_options.h"
 
 #include "timer.h"
-#include "util.h"
+#include "util.cpp"
 
 // #include "linked_list.h"
 // #include "nngraph.h"
@@ -72,57 +73,6 @@ extern "C" {
 
 int g_iter = 0;
 
-void handler(int sig) {
-  void *array[10];
-  size_t size;
-
-  // get void*'s for all entries on the stack
-  size = backtrace(array, 10);
-
-  // print out all the frames to stderr
-  fprintf(stderr, "Error: signal %d:\n", sig);
-  backtrace_symbols_fd(array, size, STDERR_FILENO);
-  exit(1);
-}
-
-void write_ints_to_file(const char *fn, int *data, int N) {
-  int i;
-
-  FILE *fp;
-  fp = fopen(fn, "w");
-  for (int i = 0; i < N; i++) {
-    fprintf(fp, "%d", data[i]);
-    fprintf(fp, "\n");
-  }
-  fclose(fp);
-}
-
-void write_ints_to_fp(FILE *fp, int *data, int N) {
-  int i;
-  for (int i = 0; i < N; i++) {
-    fprintf(fp, "%d", data[i]);
-    fprintf(fp, "\n");
-  }
-}
-
-// Return integers from 0 to rangeEnd in random order.
-int *getRandomOrderInts(int rangeEnd) {
-  int *randSample = (int *)calloc((rangeEnd + 1), sizeof(int)); // Init with zeros
-  int i, tmp;
-  int swapwith;
-
-  for (i = 0; i <= rangeEnd; i++) {
-    randSample[i] = i;
-  }
-
-  for (i = 0; i <= rangeEnd; i++) {
-    swapwith = rand() % (rangeEnd + 1);
-    tmp = randSample[swapwith];
-    randSample[swapwith] = randSample[i];
-    randSample[i] = tmp;
-  }
-  return randSample;
-}
 
 void init_Clustering(Clustering **_clu, int N, int K) {
   *_clu = (Clustering *)malloc(sizeof(Clustering));
@@ -217,8 +167,11 @@ void merge_and_split(Clustering *clu, nnGraph *graph) {
 
   for (int i = 0; i < clu->N && wextsum < rext && total_ext_sum > 0.0; i++) {
     node = &graph->nodes[i];
-    for (int j = 0; j < node->neighbors->size; j++) {
-      gItem *gi = (gItem *)ll_get_item(node->neighbors, j);
+    
+    
+    for (auto gi : *(node->nset)) {
+    // for (int j = 0; j < node->neighbors->size; j++) {
+      // gItem *gi = (gItem *)ll_get_item(node->neighbors, j);
       // Not in same cluster
       if (clu->part[gi->id] != clu->part[i]) {
         wextsum += gi->dist;
@@ -297,8 +250,10 @@ void grow_Cluster(Clustering *clu, nnGraph *graph, int seed_id, int newpart, int
   clu->part[seed_id] = newpart;
   clu->node_to_clu_w[newpart][seed_id] = -DBL_MAX;
 
-  for (int j = 0; j < seed->neighbors->size; j++) {
-    gItem *gi = (gItem *)ll_get_item(seed->neighbors, j);
+
+    for (auto gi : *(seed->nset)) {
+  // for (int j = 0; j < seed->neighbors->size; j++) {
+    // gItem *gi = (gItem *)ll_get_item(seed->neighbors, j);
     clu->node_to_clu_w[newpart][gi->id] += gi->dist;
   }
 
@@ -311,8 +266,10 @@ void grow_Cluster(Clustering *clu, nnGraph *graph, int seed_id, int newpart, int
     // if(maxval < 0.0) {} //TODO
     node = &graph->nodes[maxnode];
 
-    for (int j = 0; j < node->neighbors->size; j++) {
-      gItem *gi = (gItem *)ll_get_item(node->neighbors, j);
+
+    for (auto gi : *(node->nset)) {
+    // for (int j = 0; j < node->neighbors->size; j++) {
+      // gItem *gi = (gItem *)ll_get_item(node->neighbors, j);
       if (clu->part[gi->id] != newpart) {
         clu->node_to_clu_w[newpart][gi->id] += gi->dist;
       }
@@ -402,8 +359,10 @@ double costf(nnGraph *graph, Clustering *clu, double *r_conductance) {
     clu->clusize[partA]++;
     clu->total_sums[partA] += nodeA->weight_sum;
     // printf("nodeA->weight_sum=%f\n", nodeA->weight_sum);
-    for (int j = 0; j < nodeA->neighbors->size; j++) {
-      gItem *gi = (gItem *)ll_get_item(nodeA->neighbors, j);
+    
+    for (auto gi : *(nodeA->nset)) {
+    // for (int j = 0; j < nodeA->neighbors->size; j++) {
+      // gItem *gi = (gItem *)ll_get_item(nodeA->neighbors, j);
       partB = clu->part[gi->id];
       if (partA == partB) {
         clu->ntr_sums[partA] += gi->dist;
@@ -453,13 +412,15 @@ void scale_weights(nnGraph *graph, int scale_type) {
   gNode *nodeA;
   gItem *gi;
   double maxdist = get_max_weight(graph);
+  printf("maxdist=%f\n",maxdist);
   graph->total_weight = 0.0;
   for (int i = 0; i < graph->size; i++) {
     nodeA = &graph->nodes[i];
-    gi = (gItem *)ll_get_item(nodeA->neighbors, nodeA->neighbors->size - 1);
+    // gi = (gItem *)ll_get_item(nodeA->neighbors, nodeA->neighbors->size - 1);
     nodeA->weight_sum = 0.0;
-    for (int j = 0; j < nodeA->neighbors->size; j++) {
-      gi = (gItem *)ll_get_item(nodeA->neighbors, j);
+    // for (int j = 0; j < nodeA->neighbors->size; j++) {
+    for (auto gi : *(nodeA->nset)) {
+      // gi = (gItem *)ll_get_item(nodeA->neighbors, j);
       // Scale distances to similarities
       if (scale_type == 1) {
         gi->dist = (maxdist - gi->dist) / maxdist;
@@ -521,8 +482,10 @@ int choose_best_by_delta(
   nodeA = &(graph->nodes[nid]);
   partA = clu->part[nid];
 
-  for (int j = 0; j < nodeA->neighbors->size; j++) {
-    gItem *gi = (gItem *)ll_get_item(nodeA->neighbors, j);
+
+  for (auto gi : *(nodeA->nset)) {
+  // for (int j = 0; j < nodeA->neighbors->size; j++) {
+    // gItem *gi = (gItem *)ll_get_item(nodeA->neighbors, j);
     partB = clu->part[gi->id];
     d_ntr_sums[partB] += gi->dist * 2;
   }
@@ -613,8 +576,11 @@ void density_init_partition(nnGraph *graph, Clustering *clu) {
     items[i].id = i;
     items[i].density = 0;
     if (g_opt.density_method == 1) {
-      for (int j = 0; j < nodeA->neighbors->size; j++) {
-        gItem *gi = (gItem *)ll_get_item(nodeA->neighbors, j);
+    
+    
+    for (auto gi : *(nodeA->nset)) {
+      // for (int j = 0; j < nodeA->neighbors->size; j++) {
+        // gItem *gi = (gItem *)ll_get_item(nodeA->neighbors, j);
         nodeB = &graph->nodes[gi->id];
         // Weight to neighbor multiplied by neighbors total weight
         items[i].density += (gi->dist) * (nodeB->weight_sum);

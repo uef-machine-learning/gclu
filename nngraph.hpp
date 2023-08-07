@@ -26,7 +26,6 @@ struct gItem {
 
 class giHeap : public Heap {
 public:
-
   int compare(void *_a, void *_b) {
     // printf("comp\n");
 
@@ -99,6 +98,7 @@ typedef struct gNode {
   float *mean;
 
   float internalSum;
+  double weight_sum; //NOTE: only used in gclu?
 
   // std::set<gItem *> *nset;
   // Neighbors as set  for fast check if is neighbor or not
@@ -119,9 +119,17 @@ typedef struct nnGraph {
   /*void * content;*/
   /*linkedListNode* next;*/
   gNode *nodes;
+  double total_weight; //NOTE: only used in gclu?
+
+#ifdef LDATASET
   DataSet *data;
+#endif
 } nnGraph;
 
+
+
+nnGraph *read_ascii_graphf(const char *fname);
+double get_max_weight(nnGraph *graph);
 nnGraph *init_nnGraph(int numNodes);
 void dealloc_nnGraph(nnGraph *g);
 gItem *nng_add_mutual_neighbor2(nnGraph *g, int p1, int p2, float dist);
@@ -134,8 +142,11 @@ gItem *nng_get_neighbor2(nnGraph *g, int p1, int idx);
 int nng_num_neighbors(nnGraph *g, int p1);
 void write_nngraph_to_file(nnGraph *g, const char *fn);
 void write_nngraph_to_file_old(nnGraph *g, const char *fn);
+
+#ifdef LDATASET
 gItem *find_greedy_path(DataSet *data, nnGraph *g, int source, int target);
 gItem *find_greedy_path2(DataSet *data, nnGraph *g, int source, int target);
+#endif
 void test_nn_graph();
 nnGraph *read_ascii_graphf2(const char *fname, int clist, std::map<std::string, int> **cdmap);
 

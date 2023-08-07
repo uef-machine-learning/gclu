@@ -1,4 +1,5 @@
 
+// template <typename T> std::pair<T, bool> getNthElement(std::set<T> &searchSet, int n) {
 // int HeapCmp1(void *a, void *b, void *info) {
 // float diff = (((gNode *)a)->nearest_dist - ((gNode *)b)->nearest_dist);
 // return (diff > 0 ? 1 : diff == 0 ? 0 : -1);
@@ -15,6 +16,119 @@
 /*void nng_add_neighbor(nnGraph* g, int id, int neighbor) {*/
 /*add_neighbor(g->nodes[id]->neighbors, neighbor);*/
 /*}*/
+
+nnGraph *read_ascii_graphf(const char *fname) {
+
+  int N = 0;
+  float buf;
+  FILE *fp;
+  int max_chars = 100000;
+  char line[max_chars + 1];
+  char *pbuf;
+  int i_elem = 0;
+  int dim = 0;
+  int id;
+  int numlinks;
+  int links[30000];
+  float weights[30000];
+
+  printf("Reading ascii graph dataset from file %s\n", fname);
+  fp = fopen(fname, "r");
+  if (!fp) {
+    terminal_error("File does not exist\n");
+  }
+
+  N = count_lines(fp);
+  printf("lines=%d\n", N);
+  nnGraph *graph = init_nnGraph(N);
+
+  // Get number of elements
+  char *ok = fgets(line, max_chars, fp);
+  if (ok == NULL) {
+    terminal_error("");
+  }
+  pbuf = line;
+  // TODO: Delete
+  for (i_elem = 0;; i_elem++) {
+    if (*pbuf == '\n')
+      break;
+    buf = strtof(pbuf, &pbuf);
+    // printf(" %f", buf);
+  }
+  dim = i_elem;
+  printf("\nnum_vectors=%d\n", N);
+
+  fseek(fp, 0L, SEEK_SET);
+  for (int i_vector = 0; i_vector < N; i_vector++) {
+    // for (int i_vector = 0; i_vector < 10; i_vector++) {
+    char *ok = fgets(line, max_chars, fp);
+    pbuf = line;
+    if (ok == NULL) {
+      terminal_error("premature end of file");
+    }
+
+    id = (int)strtof(pbuf, &pbuf);
+    numlinks = (int)strtof(pbuf, &pbuf);
+    // printf("id=%d nl=%d ", id, numlinks);
+
+    // printf("links: ");
+    for (int i = 0; i < numlinks; i++) {
+      if (*pbuf == '\n') {
+        terminal_error("Got too few elements");
+      }
+
+      buf = strtof(pbuf, &pbuf);
+      // printf("%f ", buf);
+      links[i] = (int)buf;
+    }
+
+    // printf("weights: ");
+    for (int i = 0; i < numlinks; i++) {
+      if (*pbuf == '\n') {
+        terminal_error("Got too few elements");
+      }
+
+      buf = strtof(pbuf, &pbuf);
+      weights[i] = buf;
+      // printf("%f ", buf);
+    }
+    // printf("\n", buf);
+
+    for (int i = 0; i < numlinks; i++) {
+      // printf("add link: [%d] = (%f)> [%d]\n", id, weights[i], links[i]);
+
+      if (!nng_has_neighbor(graph, id, links[i])) {
+        nng_add_neighbor(graph, id, links[i], weights[i]);
+      }
+
+      if (!nng_has_neighbor(graph, links[i], id)) {
+        nng_add_neighbor(graph, links[i], id, weights[i]);
+      }
+    }
+    // printf("\n");
+  }
+  return graph;
+}
+
+double get_max_weight(nnGraph *graph) {
+  gNode *nodeA;
+  gItem *gi;
+  double maxweight = -DBL_MAX;
+  for (int i = 0; i < graph->size; i++) {
+    nodeA = &graph->nodes[i];
+    // gi = (gItem *)ll_get_item(nodeA->neighbors, nodeA->neighbors->size - 1);
+
+    for (auto gi : *(nodeA->nset)) {
+      // for (int j = 0; j < nodeA->neighbors->size; j++) {
+      // gi = (gItem *)ll_get_item(nodeA->neighbors, j);
+
+      if (gi->dist > maxweight) {
+        maxweight = gi->dist;
+      }
+    }
+  }
+  return maxweight;
+}
 
 nnGraph *init_nnGraph(int numNodes) {
   int maxNeighbors = 200;
@@ -102,10 +216,8 @@ gItem *nng_add_mutual_neighbor2(nnGraph *g, int p1, int p2, float dist) {
     gi_p1->iterO = iter2.first;
     gi_p2->iterO = iter1.first;
 
-    if (g_use_heap > 0) {
-      g->nodes[p1].nearesth->insert((void *)gi_p1, &(gi_p1->heapp));
-      g->nodes[p2].nearesth->insert((void *)gi_p2, &(gi_p2->heapp));
-    }
+    g->nodes[p1].nearesth->insert((void *)gi_p1, &(gi_p1->heapp));
+    g->nodes[p2].nearesth->insert((void *)gi_p2, &(gi_p2->heapp));
 
   } else {
     free(gi_p1);
@@ -270,6 +382,7 @@ void write_nngraph_to_file_old(nnGraph *g, const char *fn) {
   fclose(fp);
 }
 
+#ifdef LDATASET
 gItem *find_greedy_path(DataSet *data, nnGraph *g, int source, int target) {
   gNode *node;
   node = &g->nodes[source];
@@ -343,6 +456,7 @@ gItem *find_greedy_path2(DataSet *data, nnGraph *g, int source, int target) {
 
   return NULL;
 }
+#endif
 
 void test_nn_graph() {
   nnGraph *g = init_nnGraph(100);
@@ -384,9 +498,10 @@ nnGraph *read_ascii_graphf2(const char *fname, int clist, std::map<std::string, 
   std::string line;
   std::string delim = " ";
   std::ifstream infile(fname);
+
+#ifdef LDATASET
   DataSet *sd = (DataSet *)malloc(sizeof(DataSet));
-  // sd->strings = new vector<string>;
-  // sd->type = T_SET; // String data
+#endif
   int numLines = 0;
   int numItems = 0;
   int buf[1000000];
@@ -399,8 +514,7 @@ nnGraph *read_ascii_graphf2(const char *fname, int clist, std::map<std::string, 
   std::stringstream ss(line);
   std::string item;
   int id = -1;
-  // sd->size = 0;
-  int numlines=0;
+  int numlines = 0;
   while (std::getline(infile, line)) {
     numlines++;
   }
@@ -409,10 +523,6 @@ nnGraph *read_ascii_graphf2(const char *fname, int clist, std::map<std::string, 
   printf("Num lines: %d\n", numlines);
   int N = numlines - 1;
 
-  // sd->bigrams = (int **)malloc(sizeof(int *) * sd->size);
-  // sd->setSize = (int *)malloc(sizeof(int) * sd->size);
-
-  // while (std::getline(infile, line)) {
   int show_sets = 1;
 
   nnGraph *graph = init_nnGraph(N);
