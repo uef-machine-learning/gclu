@@ -69,7 +69,7 @@ M-algo run example (better quality):
 ./gclu data/s4_knng_k30.txt -o tmp/s4.part -R 100 -K 15 --algo m --costf 1 --type distance
 ```
 
-Abot parameters:
+About parameters:
  - "-K 3": Cluster data to 3 clusters
  - For better results, increase -R parameter to e.g. 1000
  - For costf, can try other values. "--costf 2" gives more balanced cluster sizes.
@@ -80,7 +80,7 @@ Output file contains number of nodes and number of clusters as header info and t
 
 Save intermediate partitions:
 ```
-./gclu data/s4_knng_k30.txt -o tmp/s4.part -R 100 -K 15 --algo k --costf 1 --type distance --seed 1632488925 -g 0.8 --savparts=1
+./gclu data/s4_knng_k30.txt -o tmp/s4.part -R 10 -K 15 --algo m --costf 1 --type distance --seed 1632488925 -g 0.8 --savparts=1
 ```
 Will create a directory 'part' where the intermediate partitions will be stored in. With savparts=1 will store only results for successful merge&split operations.
 

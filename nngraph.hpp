@@ -128,6 +128,7 @@ typedef struct nnGraph {
 
 
 
+void nng_add_neighbor_safe(nnGraph *graph, int p1, int p2, float dist);
 nnGraph *read_ascii_graphf(const char *fname);
 double get_max_weight(nnGraph *graph);
 nnGraph *init_nnGraph(int numNodes);

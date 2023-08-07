@@ -170,8 +170,6 @@ void merge_and_split(Clustering *clu, nnGraph *graph) {
     
     
     for (auto gi : *(node->nset)) {
-    // for (int j = 0; j < node->neighbors->size; j++) {
-      // gItem *gi = (gItem *)ll_get_item(node->neighbors, j);
       // Not in same cluster
       if (clu->part[gi->id] != clu->part[i]) {
         wextsum += gi->dist;
@@ -252,8 +250,6 @@ void grow_Cluster(Clustering *clu, nnGraph *graph, int seed_id, int newpart, int
 
 
     for (auto gi : *(seed->nset)) {
-  // for (int j = 0; j < seed->neighbors->size; j++) {
-    // gItem *gi = (gItem *)ll_get_item(seed->neighbors, j);
     clu->node_to_clu_w[newpart][gi->id] += gi->dist;
   }
 
@@ -268,8 +264,6 @@ void grow_Cluster(Clustering *clu, nnGraph *graph, int seed_id, int newpart, int
 
 
     for (auto gi : *(node->nset)) {
-    // for (int j = 0; j < node->neighbors->size; j++) {
-      // gItem *gi = (gItem *)ll_get_item(node->neighbors, j);
       if (clu->part[gi->id] != newpart) {
         clu->node_to_clu_w[newpart][gi->id] += gi->dist;
       }
@@ -361,8 +355,6 @@ double costf(nnGraph *graph, Clustering *clu, double *r_conductance) {
     // printf("nodeA->weight_sum=%f\n", nodeA->weight_sum);
     
     for (auto gi : *(nodeA->nset)) {
-    // for (int j = 0; j < nodeA->neighbors->size; j++) {
-      // gItem *gi = (gItem *)ll_get_item(nodeA->neighbors, j);
       partB = clu->part[gi->id];
       if (partA == partB) {
         clu->ntr_sums[partA] += gi->dist;
@@ -412,15 +404,11 @@ void scale_weights(nnGraph *graph, int scale_type) {
   gNode *nodeA;
   gItem *gi;
   double maxdist = get_max_weight(graph);
-  printf("maxdist=%f\n",maxdist);
   graph->total_weight = 0.0;
   for (int i = 0; i < graph->size; i++) {
     nodeA = &graph->nodes[i];
-    // gi = (gItem *)ll_get_item(nodeA->neighbors, nodeA->neighbors->size - 1);
     nodeA->weight_sum = 0.0;
-    // for (int j = 0; j < nodeA->neighbors->size; j++) {
     for (auto gi : *(nodeA->nset)) {
-      // gi = (gItem *)ll_get_item(nodeA->neighbors, j);
       // Scale distances to similarities
       if (scale_type == 1) {
         gi->dist = (maxdist - gi->dist) / maxdist;
@@ -484,8 +472,6 @@ int choose_best_by_delta(
 
 
   for (auto gi : *(nodeA->nset)) {
-  // for (int j = 0; j < nodeA->neighbors->size; j++) {
-    // gItem *gi = (gItem *)ll_get_item(nodeA->neighbors, j);
     partB = clu->part[gi->id];
     d_ntr_sums[partB] += gi->dist * 2;
   }
@@ -570,7 +556,6 @@ void density_init_partition(nnGraph *graph, Clustering *clu) {
   // Calculate densities for each node
   for (int i = 0; i < graph->size; i++) {
     nodeA = &graph->nodes[i];
-    // gi = (gItem *)ll_get_item(nodeA->neighbors, nodeA->neighbors->size - 1);
     // nodeA->weight_sum = 0.0;
 
     items[i].id = i;
@@ -579,8 +564,6 @@ void density_init_partition(nnGraph *graph, Clustering *clu) {
     
     
     for (auto gi : *(nodeA->nset)) {
-      // for (int j = 0; j < nodeA->neighbors->size; j++) {
-        // gItem *gi = (gItem *)ll_get_item(nodeA->neighbors, j);
         nodeB = &graph->nodes[gi->id];
         // Weight to neighbor multiplied by neighbors total weight
         items[i].density += (gi->dist) * (nodeB->weight_sum);
@@ -607,8 +590,6 @@ void density_init_partition(nnGraph *graph, Clustering *clu) {
   }
   for (int i = 0; i < graph->size; i++) {
     nodeA = &graph->nodes[items[i].id];
-    // gi = (gItem *)ll_get_item(nodeA->neighbors, nodeA->neighbors->size - 1);
-    // nodeA->weight_sum = 0.0;
 
     if (g_opt.verbose >= 2.0) {
       if (i < 20) {
@@ -725,7 +706,6 @@ int k_algo(nnGraph *graph, Clustering *clu) {
           clu->total_sums[newpart] += d_total_sum;
 
           // cost = costf(graph, clu, &conductance);
-
           // printf("i=%d d_sum_oldpart=%f d_sum_newpart=%f \n", i, d_sum_oldpart, d_sum_newpart);
         } else {
           // printf("nochange i=%d d_sum_oldpart=%f d_sum_newpart=%f \n", i, d_sum_oldpart,
@@ -770,7 +750,6 @@ int k_algo(nnGraph *graph, Clustering *clu) {
       }
       break;
     }
-    // curcost=cost;
     costprev = cost;
   }
 
@@ -798,7 +777,6 @@ void m_algo(nnGraph *graph, Clustering *clu, int n_repeats, int n_clusters) {
     }
   }
 
-  // printf("clusters=%d\n", n_clusters);
   init_Clustering(&newclu, graph->size, n_clusters);
   if (g_opt.density_method >= 1) {
     density_init_partition(graph, newclu);
@@ -823,8 +801,6 @@ void m_algo(nnGraph *graph, Clustering *clu, int n_repeats, int n_clusters) {
       // printf("gf=%f\n",gf);
     }
     grow_size = (int)((clu->N * gf) / ((float)clu->K));
-    // grow_Cluster(newclu, graph, rand() % newclu->N /*seed_id*/, rand() % newclu->K /*newpart*/,
-    // grow_size);
     merge_and_split(newclu, graph);
     num_iter = k_algo(graph, newclu);
     mean_iterations += ((float)num_iter) / (n_repeats + 1);
@@ -865,16 +841,11 @@ void m_algo(nnGraph *graph, Clustering *clu, int n_repeats, int n_clusters) {
 void repeated_k_algo(nnGraph *graph, Clustering *clu, int n_repeats, int n_clusters) {
 
   Clustering *newclu;
-  // clone_Clustering(clu, &newclu);
   clu->cost = -999999.0;
   for (int i_rep = 0; i_rep < n_repeats; i_rep++) {
     init_Clustering(&newclu, graph->size, n_clusters);
     k_algo(graph, newclu);
     printf("REP = %d, cost=%f best=%f\n", i_rep, newclu->cost, clu->cost);
-
-    // grow_Cluster(newclu, graph, rand() % newclu->N /*seed_id*/,  rand() % newclu->K
-    // /*newpart*/, 30); k_algo(graph, newclu); printf("REP_S = %d, cost=%f best=%f\n", i_rep,
-    // newclu->cost, clu->cost);
 
     if (clu->cost < newclu->cost) {
       copy_Clustering(newclu, clu);
@@ -905,9 +876,6 @@ Clustering *read_partition(const char *FileName, nnGraph *graph) // without usin
   do
     c = getc(f);
   while (c != 10);
-
-  // fscanf(f, "%i\n", &(clu->K));
-  // fscanf(f, "%i\n", &(clu->N));
 
   fscanf(f, "%i\n", &(k));
   fscanf(f, "%i\n", &(N));
@@ -973,8 +941,6 @@ int main(int argc, char *argv[]) {
   struct arg_file *infn;
   struct arg_file *outfn;
   struct arg_file *partfn;
-  // struct arg_str *outf;
-  struct arg_str *informat;
   struct arg_str *algo;
   struct arg_int *rngSeed;
   struct arg_int *nthreads;
@@ -998,6 +964,8 @@ int main(int argc, char *argv[]) {
   struct arg_str *a_scale;
   struct arg_lit *help;
   struct arg_end *end;
+  
+  test_nn_graph();
 
   void *argtable[] = {
       help = arg_litn(NULL, "help", 0, 1, "display this help and exit"),
@@ -1022,7 +990,6 @@ int main(int argc, char *argv[]) {
       a_costf =
           arg_intn(NULL, "costf", "<num>", 0, 1, "cost function {1=cond,2=inv(default),meanw}"),
 
-      informat = arg_str0(NULL, "format", "<ascii|binary>", "Input format: ascii or binary"),
 
 #ifdef USE_IGRAPH
       a_algo = arg_str0(NULL, "algo", "<algorithm>",
@@ -1082,7 +1049,8 @@ int main(int argc, char *argv[]) {
     g_opt.costf = a_costf->ival[0];
   }
   if (a_saveiterparts->count > 0) {
-    g_opt.debug_save_intermediate_part = 1;
+    // g_opt.debug_save_intermediate_part = 1;
+    g_opt.debug_save_intermediate_part = a_saveiterparts->ival[0];
   }
 
   // These cost functions we minimize:
@@ -1179,7 +1147,6 @@ int main(int argc, char *argv[]) {
     cost = costf(graph, clu, &cond);
     printf("cost4=%f\n", cost);
 
-    // double costf(nnGraph *graph, Clustering *clu, double *r_conductance) {
     return 0;
   }
 

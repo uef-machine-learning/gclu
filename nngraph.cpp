@@ -1,10 +1,4 @@
 
-// template <typename T> std::pair<T, bool> getNthElement(std::set<T> &searchSet, int n) {
-// int HeapCmp1(void *a, void *b, void *info) {
-// float diff = (((gNode *)a)->nearest_dist - ((gNode *)b)->nearest_dist);
-// return (diff > 0 ? 1 : diff == 0 ? 0 : -1);
-// }
-// #define HeapCmp(a, b, c) HeapCmp1(a, b, c)
 
 /*void addNode();*/
 /*void removeNode();*/
@@ -12,10 +6,6 @@
 /*void addNeighbor();*/
 /*void removeNeighbor();*/
 /*void hasNeighbor();*/
-
-/*void nng_add_neighbor(nnGraph* g, int id, int neighbor) {*/
-/*add_neighbor(g->nodes[id]->neighbors, neighbor);*/
-/*}*/
 
 nnGraph *read_ascii_graphf(const char *fname) {
 
@@ -116,11 +106,8 @@ double get_max_weight(nnGraph *graph) {
   double maxweight = -DBL_MAX;
   for (int i = 0; i < graph->size; i++) {
     nodeA = &graph->nodes[i];
-    // gi = (gItem *)ll_get_item(nodeA->neighbors, nodeA->neighbors->size - 1);
 
     for (auto gi : *(nodeA->nset)) {
-      // for (int j = 0; j < nodeA->neighbors->size; j++) {
-      // gi = (gItem *)ll_get_item(nodeA->neighbors, j);
 
       if (gi->dist > maxweight) {
         maxweight = gi->dist;
@@ -137,7 +124,6 @@ nnGraph *init_nnGraph(int numNodes) {
 
   auto cmp = [](gItem *a, gItem *b) { return a->id < b->id; };
   for (int i = 0; i < numNodes; i++) {
-    /*g->nodes[i].neighbors = (gItem*) malloc(sizeof(gItem)*maxNeighbors);*/
     g->nodes[i].size = 0;
     g->nodes[i].weight = 1;
     g->nodes[i].outdated = 0;
@@ -147,7 +133,6 @@ nnGraph *init_nnGraph(int numNodes) {
     g->nodes[i].visited = -1;
     g->nodes[i].maxNeighbors = maxNeighbors;
 
-    // g->nodes[i].neighbors = initLinkedList();
     g->nodes[i].nset = new std::set<gItem *, custom_compare>;
     g->nodes[i].nearesth = new giHeap();
 
@@ -177,7 +162,6 @@ void dealloc_nnGraph(nnGraph *g) {
 
 gItem *nng_add_mutual_neighbor2(nnGraph *g, int p1, int p2, float dist) {
   gNode *node = &g->nodes[p1];
-  /*gItem* neighbors = node->neighbors;*/
   assert(p1 != p2);
 
   gItem *gi_p1 = (gItem *)malloc(sizeof(gItem));
@@ -227,22 +211,33 @@ gItem *nng_add_mutual_neighbor2(nnGraph *g, int p1, int p2, float dist) {
   return gi_p1;
 }
 
-void nng_add_neighbor(nnGraph *g, int p1, int p2, float dist) {
-  gNode *node = &g->nodes[p1];
-  /*gItem* neighbors = node->neighbors;*/
+void nng_add_neighbor_safe(nnGraph *graph, int p1, int p2, float dist) {
+  gNode *node = &graph->nodes[p1];
+
+  if (nng_has_neighbor(graph, p1, p2)) // Already exists
+  {
+    return;
+  }
 
   gItem *gi = (gItem *)malloc(sizeof(gItem));
-  /*gItem* gi = &node->neighbors[node->size];*/
+  gi->id = p2;
+  gi->dist = dist;
+  // printf("dist2=%f\n",gi->dist);
+
+  graph->nodes[p1].nset->insert(gi);
+
+  node->size++;
+}
+
+void nng_add_neighbor(nnGraph *g, int p1, int p2, float dist) {
+  gNode *node = &g->nodes[p1];
+
+  gItem *gi = (gItem *)malloc(sizeof(gItem));
   gi->id = p2;
   gi->dist = dist;
   // printf("dist2=%f\n",gi->dist);
 
   g->nodes[p1].nset->insert(gi);
-
-  // ll_remove_node(g->nodes[p1].neighbors, p2);
-  // ll_add_node(node->neighbors, (void *)gi);
-
-  /*ll_add_node_if_not_exist(node->neighbors,(void*) gi);*/
 
   node->size++;
 }
@@ -253,7 +248,6 @@ void nng_add_mutual_neighbor(nnGraph *g, int p1, int p2, float dist) {
 }
 
 void nng_remove_neighbor(nnGraph *g, int p1, int p2) {
-  // ll_remove_node2(g->nodes[p1].neighbors, p2);
 
   gItem *gi = (gItem *)malloc(sizeof(gItem));
   gi->id = p2;
@@ -264,19 +258,8 @@ void nng_remove_neighbor(nnGraph *g, int p1, int p2) {
   }
 
   // free(gi); //TODO
-
-  // g->nodes[p1].nset->insert(gi);
-  /*node->size--;*/
+  /*node->size--;*/ // TODO:??
 }
-
-// int nng_has_neighbor(nnGraph *g, int p1, int p2) {
-// gItem *gi = NULL;
-// gItem *neighbor = ll_get_node_if_exist(g->nodes[p1].neighbors, p2);
-// if (neighbor == NULL) {
-// return 0;
-// }
-// return 1;
-// }
 
 int nng_has_neighbor(nnGraph *g, int p1, int p2) {
 
@@ -319,19 +302,13 @@ template <typename T> std::pair<T, bool> getNthElement(std::set<T> &searchSet, i
 }
 
 gItem *nng_get_neighbor2(nnGraph *g, int p1, int idx) {
-  // gItem *gi = (gItem *)ll_get_item(g->nodes[p1].neighbors, idx);
   // std::pair<gItem *, bool> result = getNthElement(*(g->nodes[p1].nset), 3);
 
   gItem *gi = *(std::next(g->nodes[p1].nset->begin(), idx));
   return gi;
 }
 
-// int nng_get_neighbor(nnGraph *g, int p1, int idx) {
-// gItem *gi = (gItem *)ll_get_item(g->nodes[p1].neighbors, idx);
-// return gi->id;
-// }
-
-int nng_num_neighbors(nnGraph *g, int p1) { return g->nodes[p1].neighbors->size; }
+int nng_num_neighbors(nnGraph *g, int p1) { return g->nodes[p1].nset->size(); }
 
 void write_nngraph_to_file(nnGraph *g, const char *fn) {
   FILE *fp;
@@ -460,13 +437,21 @@ gItem *find_greedy_path2(DataSet *data, nnGraph *g, int source, int target) {
 
 void test_nn_graph() {
   nnGraph *g = init_nnGraph(100);
-  nng_add_neighbor(g, 0, 99, 2.0);
-  nng_add_neighbor(g, 0, 10, 2.0);
-  nng_add_neighbor(g, 0, 20, 2.0);
-  nng_add_neighbor(g, 0, 7, 2.0);
-  nng_add_neighbor(g, 0, 90, 2.0);
-  nng_add_neighbor(g, 0, 70, 2.0);
-  nng_add_neighbor(g, 0, 77, 2.0);
+  nng_add_neighbor_safe(g, 0, 99, 2.0);
+  nng_add_neighbor_safe(g, 0, 90, 2.0);
+  nng_add_neighbor_safe(g, 0, 10, 2.0);
+  nng_add_neighbor_safe(g, 0, 20, 2.0);
+  nng_add_neighbor_safe(g, 0, 7, 2.0);
+  nng_add_neighbor_safe(g, 0, 90, 2.0);
+  nng_add_neighbor_safe(g, 0, 70, 2.0);
+  nng_add_neighbor_safe(g, 0, 90, 2.0);
+  nng_add_neighbor_safe(g, 0, 77, 2.0);
+  nng_add_neighbor_safe(g, 0, 90, 2.0);
+  nng_add_neighbor_safe(g, 3, 90, 2.0);
+  nng_add_neighbor_safe(g, 3, 70, 2.0);
+  nng_add_neighbor_safe(g, 3, 90, 2.0);
+  nng_add_neighbor_safe(g, 3, 77, 2.0);
+
   // nng_remove_neighbor(g,0,90);
   nng_remove_neighbor(g, 0, 99);
   nng_remove_neighbor(g, 0, 77);
