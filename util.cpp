@@ -1,40 +1,35 @@
 
 #include "util.hpp"
 
-// From https://stackoverflow.com/questions/81870/is-it-possible-to-print-a-variables-type-in-standard-c
+// From
+// https://stackoverflow.com/questions/81870/is-it-possible-to-print-a-variables-type-in-standard-c
 #include <type_traits>
 #include <typeinfo>
 #ifndef _MSC_VER
-#   include <cxxabi.h>
+#include <cxxabi.h>
 #endif
 #include <memory>
 #include <string>
 #include <cstdlib>
-template <class T>
-std::string
-type_name()
-{
-    typedef typename std::remove_reference<T>::type TR;
-    std::unique_ptr<char, void(*)(void*)> own
-           (
+template <class T> std::string type_name() {
+  typedef typename std::remove_reference<T>::type TR;
+  std::unique_ptr<char, void (*)(void *)> own(
 #ifndef _MSC_VER
-                abi::__cxa_demangle(typeid(TR).name(), nullptr,
-                                           nullptr, nullptr),
+      abi::__cxa_demangle(typeid(TR).name(), nullptr, nullptr, nullptr),
 #else
-                nullptr,
+      nullptr,
 #endif
-                std::free
-           );
-    std::string r = own != nullptr ? own.get() : typeid(TR).name();
-    if (std::is_const<TR>::value)
-        r += " const";
-    if (std::is_volatile<TR>::value)
-        r += " volatile";
-    if (std::is_lvalue_reference<T>::value)
-        r += "&";
-    else if (std::is_rvalue_reference<T>::value)
-        r += "&&";
-    return r;
+      std::free);
+  std::string r = own != nullptr ? own.get() : typeid(TR).name();
+  if (std::is_const<TR>::value)
+    r += " const";
+  if (std::is_volatile<TR>::value)
+    r += " volatile";
+  if (std::is_lvalue_reference<T>::value)
+    r += "&";
+  else if (std::is_rvalue_reference<T>::value)
+    r += "&&";
+  return r;
 }
 // Usage: std::cout << "decltype(it) is " << type_name<decltype(it)>() << '\n';
 
@@ -59,11 +54,58 @@ void __terminal_error(const char *file, const unsigned line, const char *func, c
   exit(1);
 }
 
+///////////////////////////////////
+// From https://github.com/lemire/testingRNG/blob/master/source/widynski.h
+#include <stdint.h>
+// based on https://arxiv.org/pdf/1704.00358.pdf
+static uint64_t g_widynski_x;
+static uint64_t g_widynski_w;
+static uint64_t g_widynski_s;
 
-inline int rand_int(int max_int) { return std::rand() % (max_int); }
-inline int rand_int_range(int min_int, int max_int) {
-  return min_int + (std::rand() % (max_int - min_int + 1));
+static inline void widynski_seed(uint64_t seed) {
+  g_widynski_w = 0;
+  g_widynski_x = 0;
+  g_widynski_s = seed;
+  g_widynski_s |= 1;
+  if ((g_widynski_s >> 32) == 0)
+    g_widynski_s = g_widynski_s | (g_widynski_s << 32);
 }
+
+static inline uint32_t widynski() {
+  g_widynski_x *= g_widynski_x;
+  g_widynski_x += (g_widynski_w += g_widynski_s);
+  g_widynski_x = (g_widynski_x >> 32) | (g_widynski_x << 32);
+  return g_widynski_x;
+}
+///////////////////////////////////
+
+// inline int rand_int(int max_int) { return std::rand() % (max_int); }
+// inline int rand_int_range(int min_int, int max_int) {
+// return min_int + (std::rand() % (max_int - min_int + 1));
+// }
+
+#define CUSTOMRAND 1
+
+#ifdef CUSTOMRAND
+int _rand() {
+  int r = widynski() % std::numeric_limits<int>::max();
+  // printf("rnd=%d\n", r);
+  return r;
+}
+void rand_seed(int seed) { widynski_seed(seed); }
+#else
+int _rand() { return (int)std::rand(); }
+void rand_seed(int seed) { srand(seed); }
+#endif
+
+int rand_int(int max_int) { return _rand() % (max_int); }
+int rand_int_range(int min_int, int max_int) {
+  return min_int + (_rand() % (max_int - min_int + 1));
+}
+
+// #define RAND_FLOAT() (static_cast<double>(rand()) / static_cast<double>(RAND_MAX))
+#define RAND_FLOAT() (static_cast<double>(_rand()) / static_cast<double>(RAND_MAX))
+#define RAND_IN_RANGE(a, b) (a + (b - a) * RAND_FLOAT());
 
 // Return integers from 0 to rangeEnd in random order.
 int *getRandomOrderInts(int rangeEnd) {
@@ -76,14 +118,13 @@ int *getRandomOrderInts(int rangeEnd) {
   }
 
   for (i = 0; i <= rangeEnd; i++) {
-    swapwith = rand() % (rangeEnd + 1);
+    swapwith = _rand() % (rangeEnd + 1);
     tmp = randSample[swapwith];
     randSample[swapwith] = randSample[i];
     randSample[i] = tmp;
   }
   return randSample;
 }
-
 
 // Copied from
 // https://stackoverflow.com/questions/6089231/getting-std-ifstream-to-handle-lf-cr-and-crlf/6089413#6089413
@@ -118,7 +159,6 @@ std::istream &safeGetline(std::istream &is, std::string &t) {
     }
   }
 }
-
 
 static void *safe_malloc(size_t n, unsigned int line) {
   void *p = malloc(n);
@@ -190,7 +230,6 @@ void write_flt_vec2_to_file(const char *fn, vector<vector<float>> *vec2) {
   fclose(fp);
 }
 
-
 void write_dbl_vec2_to_file(const char *fn, vector<vector<double>> *vec2) {
   int i;
   FILE *fp;
@@ -209,4 +248,3 @@ void write_dbl_vec2_to_file(const char *fn, vector<vector<double>> *vec2) {
   }
   fclose(fp);
 }
-

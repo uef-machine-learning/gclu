@@ -16,8 +16,7 @@ int *getRandomOrderInts(int rangeEnd);
 
 #include <cstdlib> // exit
 
-#define RAND_FLOAT() (static_cast<double>(rand()) / static_cast<double>(RAND_MAX))
-#define RAND_IN_RANGE(a,b)  (a+(b-a)*RAND_FLOAT());
+
 
 
 /*#define STATCODE(a) a*/

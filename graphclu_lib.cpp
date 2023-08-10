@@ -1,4 +1,5 @@
 
+
 int g_iter = 0;
 
 void init_Clustering(Clustering **_clu, int N, int K) {
@@ -20,7 +21,7 @@ void init_Clustering(Clustering **_clu, int N, int K) {
 
   // Initialize to random partition
   for (int i = 0; i < N; i++) {
-    clu->part[i] = rand() % K;
+    clu->part[i] = _rand() % K;
   }
 }
 
@@ -59,7 +60,7 @@ void merge_and_split(Clustering *clu, nnGraph *graph) {
 
   int *rand_order;
   int clu_to_split;
-  int to_mergeA = rand() % clu->K;
+  int to_mergeA = _rand() % clu->K;
   int to_mergeB;
   int seed_id, steps;
   gNode *node;
@@ -73,7 +74,7 @@ void merge_and_split(Clustering *clu, nnGraph *graph) {
   // Select another cluster to merge with to_mergeA
   // This is failsafe strategy in case the probabilistic selection doesn't work
   while (1) {
-    to_mergeB = rand() % clu->K;
+    to_mergeB = _rand() % clu->K;
 
     if (to_mergeB != to_mergeA) {
       break;
@@ -128,7 +129,7 @@ void merge_and_split(Clustering *clu, nnGraph *graph) {
   // Select cluster to split.
   // After merging, to_mergeB will be empty, so we can't split it
   while (1) {
-    clu_to_split = rand() % clu->K;
+    clu_to_split = _rand() % clu->K;
     if (clu_to_split != to_mergeB) {
       break;
     }
@@ -169,7 +170,7 @@ void grow_Cluster(Clustering *clu, nnGraph *graph, int seed_id, int newpart, int
 
     // Dissolve cluster
     if (clu->part[i] == newpart) {
-      clu->part[i] = rand() % clu->K;
+      clu->part[i] = _rand() % clu->K;
     }
   }
 
@@ -553,7 +554,7 @@ void density_init_partition(nnGraph *graph, Clustering *clu) {
   // Set unhandled nodes to any random partition
   for (int i_node = 0; i_node < graph->size; i_node++) {
     if (clu->part[i_node] == -1) {
-      clu->part[i_node] = rand() % clu->K;
+      clu->part[i_node] = _rand() % clu->K;
       num_unhandled++;
     }
   }
@@ -689,6 +690,7 @@ int k_algo(nnGraph *graph, Clustering *clu) {
 void m_algo(nnGraph *graph, Clustering *clu, int n_repeats, int n_clusters) {
 
   printf("Start K/swap algo\n");
+  printf("Graph, tweight=%f\n",graph->total_weight);
   Clustering *newclu;
   clu->cost = -999999.0;
   char partfn[1000];
@@ -784,7 +786,7 @@ void repeated_k_algo(nnGraph *graph, Clustering *clu, int n_repeats, int n_clust
   }
   printf("FINAL cost=%f FINAL\n", clu->cost);
 
-  grow_Cluster(clu, graph, rand() % clu->N /*seed_id*/, rand() % clu->K /*newpart*/, 30);
+  grow_Cluster(clu, graph, _rand() % clu->N /*seed_id*/, _rand() % clu->K /*newpart*/, 30);
   k_algo(graph, clu);
 
   printf("FINAL2 cost=%f FINAL\n", clu->cost);

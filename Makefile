@@ -1,5 +1,6 @@
 CC=g++
 GPP=g++
+#CC=x86_64-linux-gnu-gcc
 
 DISABLEWARN = -Wno-unused-but-set-variable -Wno-unused-result -Wno-unused-variable
 #ARCHFLAGS =  -march=x86-64  -mno-avx
@@ -29,7 +30,7 @@ options.o:
 	$(CC) -c $(CXXFLAGS) options.c
 
 gclu: $(DEPS) $(OBJS)
-	$(CC) $(CXXFLAGS) $(DISABLEWARN) graphclu.cpp $(LIBS) $(OBJS) -o gclu  -static
+	$(CC) $(CXXFLAGS) $(DISABLEWARN) graphclu.cpp $(LIBS) $(OBJS) -o gclu  -static -lstdc++  -lm
 
 gclu_gdb: $(DEPS) $(OBJS)
 	$(CC) -g -O1 $(ARCHFLAGS)  -Wall -I.  -std=c++11 $(DISABLEWARN) graphclu.cpp $(LIBS) $(OBJS) -o gclu_gdb  -static

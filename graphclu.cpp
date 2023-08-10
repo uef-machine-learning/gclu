@@ -69,8 +69,6 @@ extern "C" {
 #include "igraph_algos.h"
 #endif
 
-// double costf_w(double intsum, int size, nnGraph *graph, Clustering *clu);
-
 #include "graphclu_lib.cpp"
 
 
@@ -299,7 +297,8 @@ int main(int argc, char *argv[]) {
     g_opt.seed = time(NULL);
   }
   printf("Set RNG seed: %d\n", g_opt.seed);
-  srand(g_opt.seed);
+  // srand(g_opt.seed);
+  // rand_seed(g_opt.seed);
 
   if (a_graphtype->count > 0) {
     if (strcmp(a_graphtype->sval[0], "similarity") == 0) {
@@ -370,6 +369,8 @@ int main(int argc, char *argv[]) {
 
   // Default option
   if (a_algo->count == 0 || strcmp(a_algo->sval[0], "m") == 0) {
+  
+    rand_seed(g_opt.seed);
     m_algo(graph, clu, repeats, clusters);
   }
 

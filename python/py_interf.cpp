@@ -47,23 +47,6 @@ using std::vector;
 
 #include "graphclu_lib.cpp"
 
-// #include <math.h>
-// #include <numpy/arrayobject.h>
-// #include <stdio.h>
-
-// #include <stdio.h>
-// #include <pthread.h>
-// #include "contrib/argtable3.h"
-// #include <sys/mman.h> // mmap, munmap
-
-// #include <execinfo.h>
-// #include <signal.h>
-// #include <stdlib.h>
-// #include <unistd.h>
-// #include <stdio.h>
-// #include <iostream>
-// #include <vector>
-
 using namespace std;
 
 struct stat2 {
@@ -77,32 +60,6 @@ struct stat2 g_stat;
 void print_stat() {
   printf("STAT num_calc_clu_dist=%d num_pruned=%d\n", g_stat.num_calc_clu_dist, g_stat.num_pruned);
 }
-
-// #include "constants.h"
-// #include "options.h"
-
-// #include "heap.cpp"
-
-// #include "timer.hpp"
-// #include "util.hpp"
-// #include "globals.h"
-// #include "dataset.hpp"
-// #include "linked_list.hpp"
-// #include "nngraph.hpp"
-// #include "knngraph.hpp"
-// #include "agg_clu.hpp"
-
-// #include "util.cpp"
-// #include "dataset.cpp"
-// #include "knngraph.cpp"
-// #include "nngraph.cpp"
-// #include "linked_list.cpp"
-// #include "options.cpp"
-// #include "agg_clu.cpp"
-
-// DataSet *g_data = NULL;
-
-// float *g_distance(int a, int b) { distance(g_data, a, b); }
 
 #include <Python.h>
 #include <cstring>
@@ -174,8 +131,21 @@ PyObject *py_gclu(PyListObject *py_v, int num_clusters, int num_tsp, int dfunc) 
     int a = PyLong_AsLong(idA);
     int b = PyLong_AsLong(idB);
     float w = PyFloat_AsDouble(weight);
-    nng_add_neighbor_safe(graph, a, b, w);
+    // nng_add_neighbor_safe(graph, a, b, w);
+    // nng_add_neighbor_safe(graph, b, a, w);
+
+    if (!nng_has_neighbor(graph, a, b)) {
+      nng_add_neighbor(graph, a, b, w);
+    }
+
+    if (!nng_has_neighbor(graph, b, a)) {
+      nng_add_neighbor(graph, b, a, w);
+    }
   }
+  
+  
+  // nnGraph *graph2 = read_ascii_graphf("data/s4_knng_k30.txt");
+  // graph = graph2;
   scale_weights(graph, 1); // DISTANCE
   // TODO
 
@@ -197,6 +167,7 @@ PyObject *py_gclu(PyListObject *py_v, int num_clusters, int num_tsp, int dfunc) 
   g_opt.dissolve = 1;
   g_opt.clusters = 50;
   g_opt.graph_type = SIMILARITY;
+  // g_opt.graph_type = DISTANCE;
   g_opt.debug = 0;
   g_opt.grow_factor = 0.8;
   g_opt.grow_factor_start = 1.0;
@@ -218,7 +189,10 @@ PyObject *py_gclu(PyListObject *py_v, int num_clusters, int num_tsp, int dfunc) 
   }
 
   g_timer.tick();
-  m_algo(graph, clu, 1000 /*repeats*/, num_clusters);
+  int seed = 8833;
+  rand_seed(seed);
+
+  m_algo(graph, clu, 10 /*repeats*/, num_clusters);
 
   for (int i = 0; i < clu->N; i++) {
     clu->part[i] += 1;
