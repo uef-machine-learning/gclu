@@ -9,7 +9,64 @@ http://cs.uef.fi/ml/article/graphclu/
 
 Contact: samisi@cs.uef.fi
 
-# Input data format.
+# Python interface
+
+## Install & test
+```
+git clone https://github.com/uef-machine-learning/gclu.git
+cd gclu
+pip install -r python/requirements.txt
+pip install .
+python/api_example_knn.py
+```
+
+## Examples
+
+See examples how to use in:
+```
+python/api_example_karate.py
+python/api_example_knn.py
+```
+
+```py
+import networkx as nx
+import matplotlib.pyplot as plt
+
+from gclu import gclu
+
+G = nx.karate_club_graph()
+    
+edges=[]
+for nodeA,nodeB in G.edges():
+    weight=1.0
+    edges.append([nodeA,nodeB,weight])
+
+
+labels=gclu(edges,graph_type="distance",num_clusters=2,repeats=2,scale="no",seed=121288,costf="inv")
+#Explanation of parameters:
+# edges: list of [nodeidA,nodeidB,weight] values
+#        [[0, 1, 1.0], [0, 2, 1.0], ...]    
+# num_clusters: How many groups should the data be divided to
+# repeats: How many times to repeat split&merge process. 
+           Larger values mean better optimization.
+# seed: random seed value
+# graph_type: "distance" if larger values mean nodes are farther, 
+#             "similarity" if closer.
+# costf: is one of {"cond","inv","meanw"}
+# scale: set to "no" if weights are already in suitable range. 
+#        Algorithm is sensitive to large outliers values.
+
+dlabels={}
+for i in range(len(labels)): #transform to dict
+    dlabels[i] = labels[i]
+    
+nx.draw_kamada_kawai(G, with_labels=True,labels=dlabels)
+
+plt.show()
+```
+
+# Command line interface
+## Input data format.
 One line for each item in dataset. Line format:  
  - First number: id of node (in range 0..(N-1))
  - Second number: K = Number of neighbors
@@ -29,12 +86,12 @@ So, input is actually a directed graph, but gets converted to undirected.
 
 See unb3_knn10.txt as example input file. unb3_knn10.txt is a kNN graph of original unb3.txt dataset.
 
-# Compile (on linux)
+## Compile (on linux)
 ```make```
 
 If needed to run other algorithms than k-algo, (e.g. walktrap, louvain, fastg), need  to set location of iGraph in Makefile: OIGRAPH var. Then compile:
 ```make gclu_ig```
-# Running the program
+## Running the program
 ```
 ./gclu [--help] [-o <file>] <file> [--seed=<n>] [-R <n>] [-K <n>] [-g <num>] [-V <num>] [-H <num>] [--density=<n>] [-I <num>] [--costf=<num>] [--format=<ascii|binary>] [-A <algorithm>] [--type=<similarity|distance>] [--scale=<no|yes>] [--evalpart=<file>] [--savparts=<num>] [--gstart=<num>] [--gend=<num>]
   --help                    display this help and exit

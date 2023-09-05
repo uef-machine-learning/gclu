@@ -94,13 +94,10 @@ PyObject *array_to_py(int *arr, int N) {
   return pyarr;
 }
 
-PyObject *py_gclu(PyListObject *py_v, int num_clusters, int num_tsp, int dfunc) {
+PyObject *py_gclu(PyListObject *py_v, int num_clusters, int repeats, int seed) {
 
-  // PyObject *ret;
   PyObject *py_labels;
 
-  // PyObject *PyList_GetItem(PyObject *list, Py_ssize_t index)¶
-  // Py_ssize_t PyList_Size(PyObject *list)¶
   int lsize = PyList_Size((PyObject *)py_v);
   printf("size=%d\n", lsize);
   int numnodes = 0;
@@ -108,7 +105,6 @@ PyObject *py_gclu(PyListObject *py_v, int num_clusters, int num_tsp, int dfunc) 
     PyObject *x = PyList_GetItem((PyObject *)py_v, i);
     PyObject *idA = PyList_GetItem((PyObject *)x, 0);
     PyObject *idB = PyList_GetItem((PyObject *)x, 1);
-    PyObject *weight = PyList_GetItem((PyObject *)x, 2);
     int a = PyLong_AsLong(idA);
     int b = PyLong_AsLong(idB);
     if (numnodes < a) {
@@ -142,43 +138,9 @@ PyObject *py_gclu(PyListObject *py_v, int num_clusters, int num_tsp, int dfunc) 
       nng_add_neighbor(graph, b, a, w);
     }
   }
-  
-  
-  // nnGraph *graph2 = read_ascii_graphf("data/s4_knng_k30.txt");
-  // graph = graph2;
-  scale_weights(graph, 1); // DISTANCE
-  // TODO
-
-  // if (g_opt.scale == 1) {
-  // if (graph_type == DISTANCE) {
-  // scale_weights(graph, 1);
-  // } else {
-  // scale_weights(graph, 2);
-  // }
-  // } else {
-  // // No scale
-  // scale_weights(graph, -1);
-  // }
 
   Clustering *clu;
   init_Clustering(&clu, graph->size, num_clusters);
-
-  g_opt.repeats = 0;
-  g_opt.dissolve = 1;
-  g_opt.clusters = 50;
-  g_opt.graph_type = SIMILARITY;
-  // g_opt.graph_type = DISTANCE;
-  g_opt.debug = 0;
-  g_opt.grow_factor = 0.8;
-  g_opt.grow_factor_start = 1.0;
-  g_opt.grow_factor_end = 1.0;
-  g_opt.verbose = 1;
-  g_opt.costf = 1;    // 1=cond, 2=meanw
-  g_opt.minimize = 0; // maximize by default
-  g_opt.debug_save_intermediate_part = 0;
-  g_opt.density_method = 1;
-  g_opt.max_iter = 200;
-  g_opt.scale = 1;
 
   if (g_opt.costf <= 3) {
     g_opt.minimize = 1;
@@ -188,11 +150,26 @@ PyObject *py_gclu(PyListObject *py_v, int num_clusters, int num_tsp, int dfunc) 
     g_opt.costmultip = 1.0;
   }
 
+  if (g_opt.scale == 1) {
+    if (g_opt.graph_type == DISTANCE) {
+      scale_weights(graph, 1);
+    } else { // SIMILARITY
+      scale_weights(graph, 2);
+    }
+  } else {
+    // No scale
+    scale_weights(graph, -1);
+  }
+
   g_timer.tick();
-  int seed = 8833;
+  if (seed == 0) {
+    seed = time(NULL);
+  }
+  g_opt.seed = seed;
   rand_seed(seed);
 
-  m_algo(graph, clu, 10 /*repeats*/, num_clusters);
+  
+  m_algo(graph, clu, repeats, num_clusters);
 
   for (int i = 0; i < clu->N; i++) {
     clu->part[i] += 1;
@@ -232,46 +209,72 @@ PyMODINIT_FUNC PyInit_gclu(void) {
 
 static PyObject *gclu_py(PyObject *self, PyObject *args, PyObject *kwargs) {
   import_array();
-  // PyArrayObject *py_v;
-  // PyObject *py_v;
   PyListObject *py_v;
-  int num_neighbors = 10, num_clusters = 10, num_tsp = 10, maxiter = 100;
-  float nndes_start = 0.0, endcond = 0.05;
-  char *type = NULL;
-  char *distance = NULL;
-  // int dfunc = D_L2;
+  // int num_clusters = 10;
+  // char *type = NULL;
+
+  int o_repeats = 100;
+  int o_num_clusters = 20;
+  char *o_graph_type;
+  char *o_costf;
+  char *o_scale;
+  int o_verbose = 0;
+  int o_seed = 0;
+
+  g_opt.repeats = 0;
+  g_opt.dissolve = 1;
+  g_opt.clusters = 10;
+  g_opt.graph_type = DISTANCE;
+  g_opt.debug = 0;
+  g_opt.grow_factor = 0.8;
+  g_opt.grow_factor_start = 1.0;
+  g_opt.grow_factor_end = 1.0;
+  g_opt.verbose = 1;
+  g_opt.costf = 1;    // 1=cond, 2=inv
+  g_opt.minimize = 0; // maximize by default
+  g_opt.debug_save_intermediate_part = 0;
+  g_opt.density_method = 1;
+  g_opt.max_iter = 200;
+  g_opt.scale = 1;
 
   PyObject *ret;
-  static char *kwlist[] = {"v", "num_clusters", "num_tsp", "dtype", "distance", NULL};
+  static char *kwlist[] = {"v",     "graph_type", "num_clusters", "repeats", "costf",
+                           "scale", "verbose",    "seed",         NULL};
 
-  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O!i|iss", kwlist, &PyList_Type, &py_v,
-                                   &num_clusters, &num_tsp, &type, &distance)) {
+  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O!si|issii", kwlist, &PyList_Type, &py_v,
+                                   &o_graph_type, &o_num_clusters, &o_repeats, &o_costf, &o_scale,
+                                   &o_verbose, &o_seed)) {
     return NULL;
   }
 
-  if (num_tsp <= 0) {
-    PyErr_SetString(PyExc_ValueError, "num_tsp <= 0 ");
+  g_opt.verbose = o_verbose;
+  g_opt.repeats = o_repeats;
+
+  if (strcmp("no", o_scale) == 0) {
+    g_opt.scale = 0;
   }
 
-  // printf("v %f %f\n", v(0, 0), v(0, 1));
+  if (strcmp("cond", o_costf) == 0) {
+    g_opt.costf = COND;
+  } else if (strcmp("inv", o_costf) == 0) {
+    g_opt.costf = INV;
+  } else if (strcmp("meanw", o_costf) == 0) {
+    g_opt.costf = MEANW;
+  }
 
-  // int dtype = D_L2;
-  // if (distance != NULL) {
-  // if (strcmp("l2", distance) == 0) {
-  // dtype = D_L2;
-  // } else if (strcmp("l1", distance) == 0) {
-  // dtype = D_L1;
-  // } else if (strcmp("cos", distance) == 0) {
-  // dtype = D_COS;
-  // } else {
-  // PyErr_SetString(PyExc_ValueError, "Distance must be one for {l2(default),l1,cos}");
-  // return NULL;
-  // }
-  // }
+  printf("COSFSFSF=%d\n", g_opt.costf);
 
-  printf("gclu_py 0001\n");
+  if (strcmp("similarity", o_graph_type) == 0) {
+    g_opt.graph_type = SIMILARITY;
+  } else if (strcmp("distance", o_graph_type) == 0) {
+    g_opt.graph_type = DISTANCE;
+  } else {
+    PyErr_SetString(PyExc_ValueError, "graph_type must be either 'similarity' (larger weight means "
+                                      "closer) or 'distance' (smaller weight means closer)}");
+    return NULL;
+  }
 
-  ret = py_gclu(py_v, num_clusters, num_tsp, 0);
+  ret = py_gclu(py_v, o_num_clusters, o_repeats, o_seed);
 
   return ret;
 }
