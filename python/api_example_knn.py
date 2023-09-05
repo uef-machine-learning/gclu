@@ -32,7 +32,10 @@ with open(infname) as f:
             # G.add_edge(i, nid, weight=w)
             edges.append([i,nid,w])
             
-labels=gclu(edges,15)
+# labels=gclu(edges,15)
+labels=gclu(edges,graph_type="distance",num_clusters=13,repeats=10)
+# labels=gclu(edges,graph_type="similarity",num_clusters=13,repeats=100)
 print(labels)
 
+G = nx.karate_club_graph()
 

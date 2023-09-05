@@ -1,4 +1,7 @@
 
+#define COND 1
+#define INV 2
+#define MEANW 4
 
 int g_iter = 0;
 
@@ -95,8 +98,7 @@ void merge_and_split(Clustering *clu, nnGraph *graph) {
 
   for (int i = 0; i < clu->N && wextsum < rext && total_ext_sum > 0.0; i++) {
     node = &graph->nodes[i];
-    
-    
+
     for (auto gi : *(node->nset)) {
       // Not in same cluster
       if (clu->part[gi->id] != clu->part[i]) {
@@ -154,7 +156,6 @@ void merge_and_split(Clustering *clu, nnGraph *graph) {
   }
 }
 
-
 // Starting from seed node, expand cluster to other nodes, in each step maximizing total internal
 // weight of cluster
 void grow_Cluster(Clustering *clu, nnGraph *graph, int seed_id, int newpart, int steps) {
@@ -177,8 +178,7 @@ void grow_Cluster(Clustering *clu, nnGraph *graph, int seed_id, int newpart, int
   clu->part[seed_id] = newpart;
   clu->node_to_clu_w[newpart][seed_id] = -DBL_MAX;
 
-
-    for (auto gi : *(seed->nset)) {
+  for (auto gi : *(seed->nset)) {
     clu->node_to_clu_w[newpart][gi->id] += gi->dist;
   }
 
@@ -190,7 +190,6 @@ void grow_Cluster(Clustering *clu, nnGraph *graph, int seed_id, int newpart, int
     }
     // if(maxval < 0.0) {} //TODO
     node = &graph->nodes[maxnode];
-
 
     for (auto gi : *(node->nset)) {
       if (clu->part[gi->id] != newpart) {
@@ -282,7 +281,7 @@ double costf(nnGraph *graph, Clustering *clu, double *r_conductance) {
     clu->clusize[partA]++;
     clu->total_sums[partA] += nodeA->weight_sum;
     // printf("nodeA->weight_sum=%f\n", nodeA->weight_sum);
-    
+
     for (auto gi : *(nodeA->nset)) {
       partB = clu->part[gi->id];
       if (partA == partB) {
@@ -319,7 +318,7 @@ double costf(nnGraph *graph, Clustering *clu, double *r_conductance) {
   clu->conductance = conductance;
   if (g_opt.costf == 0) {
     return ntr_sum;
-  } else if (g_opt.costf == 1) {
+  } else if (g_opt.costf == COND) {
     return conductance;
   } else if (g_opt.costf >= 2) {
     return ntr_sum2;
@@ -354,11 +353,12 @@ void scale_weights(nnGraph *graph, int scale_type) {
   }
 }
 
+// 4=meanw,2=inv,1=cond
 double costf_w(double intsum, int size, nnGraph *graph, Clustering *clu) {
   double r;
 
   double p = 3.0;
-  if (g_opt.costf == 2) {
+  if (g_opt.costf == INV) {
 
     // "Expected" weight divided by observed
     if (size == 0 || intsum == 0.0) {
@@ -366,24 +366,23 @@ double costf_w(double intsum, int size, nnGraph *graph, Clustering *clu) {
     }
     r = -(graph->total_weight / ((double)(clu->K))) / (pow(1.0e-10 + intsum, 1.0));
 
-  } else if (g_opt.costf == 3) {
+  } else if (g_opt.costf == 3) { // experimental
     if (size == 0 || intsum == 0.0) {
       return -20e1;
     }
     r = -(size / (pow(1.0e-10 + intsum, 1.0)));
-  } else if (g_opt.costf == 4) {
+  } else if (g_opt.costf == MEANW) {
     if (size == 0) {
       return 0.0;
     }
     r = intsum / size;
-  } else if (g_opt.costf == 5) {
+  } else if (g_opt.costf == 5) { // experimental
     r = intsum / size;
-  } else if (g_opt.costf == 10) {
+  } else if (g_opt.costf == 10) { // experimental
     r = -(pow(size, 0.5) / (pow(1.0e-10 + intsum, 1.0)));
   }
   return r;
 }
-
 
 int choose_best_by_delta(
     // INPUT:
@@ -400,7 +399,6 @@ int choose_best_by_delta(
   nodeA = &(graph->nodes[nid]);
   partA = clu->part[nid];
 
-
   for (auto gi : *(nodeA->nset)) {
     partB = clu->part[gi->id];
     d_ntr_sums[partB] += gi->dist * 2;
@@ -409,13 +407,13 @@ int choose_best_by_delta(
   double oldcost, newcost, d_removal, d_add;
 
   // Calculate removal cost from current cluster
-  if (g_opt.costf == 1) {
+  if (g_opt.costf == COND) {
     oldcost = -(clu->total_sums[partA] - clu->ntr_sums[partA]) / clu->total_sums[partA];
     newcost = -((clu->total_sums[partA] - nodeA->weight_sum) -
                 (clu->ntr_sums[partA] - d_ntr_sums[partA])) /
               (clu->total_sums[partA] - nodeA->weight_sum);
 
-  } else if (g_opt.costf >= 2) {
+  } else if (g_opt.costf >= 2) { // INV and MEANW
     oldcost = costf_w(clu->ntr_sums[partA], clu->clusize[partA], graph, clu);
     newcost =
         costf_w(clu->ntr_sums[partA] - d_ntr_sums[partA], clu->clusize[partA] - 1, graph, clu);
@@ -430,7 +428,7 @@ int choose_best_by_delta(
       continue;
     }
 
-    if (g_opt.costf == 1) {
+    if (g_opt.costf == COND) {
       // Conductance
       oldcost = -((clu->total_sums[i_clu] - clu->ntr_sums[i_clu]) / clu->total_sums[i_clu]);
       newcost = -((clu->total_sums[i_clu] + nodeA->weight_sum) -
@@ -491,9 +489,8 @@ void density_init_partition(nnGraph *graph, Clustering *clu) {
     items[i].id = i;
     items[i].density = 0;
     if (g_opt.density_method == 1) {
-    
-    
-    for (auto gi : *(nodeA->nset)) {
+
+      for (auto gi : *(nodeA->nset)) {
         nodeB = &graph->nodes[gi->id];
         // Weight to neighbor multiplied by neighbors total weight
         items[i].density += (gi->dist) * (nodeB->weight_sum);
@@ -690,7 +687,29 @@ int k_algo(nnGraph *graph, Clustering *clu) {
 void m_algo(nnGraph *graph, Clustering *clu, int n_repeats, int n_clusters) {
 
   printf("Start K/swap algo\n");
-  printf("Graph, tweight=%f\n",graph->total_weight);
+  printf("tweight=%f\n", graph->total_weight);
+
+  printf(""
+         "repeats = %d\n"
+         "dissolve = %d \n"
+         "clusters = %d \n"
+         "graph_type = %d \n"
+         "debug = %d \n"
+         "grow_factor = %f \n"
+         "grow_factor_start = %f \n"
+         "grow_factor_end = %f \n"
+         "verbose = %d \n"
+         "costf = %d \n"
+         "minimize = %d \n"
+         "debug_save_intermediate_part = %d \n"
+         "density_method = %d \n"
+         "max_iter = %d \n"
+         "scale = %d \n",
+         g_opt.repeats, g_opt.dissolve, g_opt.clusters, g_opt.graph_type, g_opt.debug,
+         g_opt.grow_factor, g_opt.grow_factor_start, g_opt.grow_factor_end, g_opt.verbose,
+         g_opt.costf, g_opt.minimize, g_opt.debug_save_intermediate_part, g_opt.density_method,
+         g_opt.max_iter, g_opt.scale);
+
   Clustering *newclu;
   clu->cost = -999999.0;
   char partfn[1000];
@@ -735,32 +754,32 @@ void m_algo(nnGraph *graph, Clustering *clu, int n_repeats, int n_clusters) {
     merge_and_split(newclu, graph);
     num_iter = k_algo(graph, newclu);
     mean_iterations += ((float)num_iter) / (n_repeats + 1);
-    printf(
-        "M-algo REP=%d, time[swap%d]=%f cost=%f best=%f balance_factor=%f conductance=%f niter=%d",
-        i_rep, i_rep, g_timer.get_time(), newclu->cost * (g_opt.costmultip),
-        clu->cost * (g_opt.costmultip), newclu->balance_factor, newclu->conductance * -1.0,
-        num_iter);
 
+    int improved = 0;
     if (clu->cost < newclu->cost) {
+      improved = 1;
+    }
+
+    if (improved==1 || i_rep==n_repeats) {
+      printf("M-algo REP=%d, time[swap%d]=%f cost=%f best=%f balance_factor=%f conductance=%f "
+             "niter=%d improved=%d\n",
+             i_rep, i_rep, g_timer.get_time(), newclu->cost * (g_opt.costmultip),
+             clu->cost * (g_opt.costmultip), newclu->balance_factor, newclu->conductance * -1.0,
+             num_iter, improved);
+    }
+
+    if (improved) {
       copy_Clustering(newclu, clu);
       // sprintf(partfn, "part/part-%04d-999.txt", i_rep);
       // write_ints_to_file(partfn, clu->part, clu->N);
       // printf(" %s ",partfn);
-      printf(" improved=1");
       if (g_opt.debug_save_intermediate_part >= 1) {
         sprintf(partfn, "part/part-%04d.txt", g_iter);
         write_ints_to_file(partfn, clu->part, clu->N);
       }
-    } else {
-      printf(" improved=0");
+
+      copy_Clustering(clu, newclu);
     }
-    printf("\n");
-
-    // if (i_rep % 7 == 0) {
-    copy_Clustering(clu, newclu);
-    // }
-
-    // free_Clustering(newclu);
   }
   printf("FINAL=1 cost=%f balance_factor=%f conductance=%f TIME=%f costf=%d seed=%d "
          "min_part_size=%d max_part_size=%d min_max_part_ratio=%f, niter=%f\n",
@@ -791,4 +810,3 @@ void repeated_k_algo(nnGraph *graph, Clustering *clu, int n_repeats, int n_clust
 
   printf("FINAL2 cost=%f FINAL\n", clu->cost);
 }
-
